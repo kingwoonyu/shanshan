@@ -2,72 +2,42 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>2026 新年快乐 - 豪华版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 新年快乐</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflow: hidden;
+            margin: 0; padding: 0; background-color: #000; overflow: hidden;
             font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+            touch-action: none; /* 防止手机端双击缩放 */
         }
 
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            cursor: crosshair;
-        }
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
 
         #text-container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            pointer-events: none;
-            width: 100%;
+            position: relative; z-index: 10; text-align: center;
+            pointer-events: none; width: 100%;
         }
 
         .fade-text {
-            color: #fff;
-            font-size: 9rem; 
-            font-weight: 900;
-            text-shadow: 
-                0 0 10px #fff,
-                0 0 20px #ff0055,
-                0 0 50px #ff0055,
-                0 0 80px #ff0055;
-            opacity: 0;
-            transform: scale(0.3);
+            color: #fff; font-weight: 900;
+            text-shadow: 0 0 10px #fff, 0 0 20px #ff0055, 0 0 50px #ff0055, 0 0 80px #ff0055;
+            opacity: 0; transform: scale(0.3);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: none;
         }
 
-        .fade-text.active {
-            display: block;
-            opacity: 1;
-            transform: scale(1);
-        }
+        /* 响应式文字：电脑9rem，手机4.5rem */
+        @media (min-width: 768px) { .fade-text { font-size: 9rem; } }
+        @media (max-width: 767px) { .fade-text { font-size: 4.5rem; } }
+
+        .fade-text.active { display: block; opacity: 1; transform: scale(1); }
 
         #start-btn {
-            position: absolute;
-            z-index: 100;
-            padding: 18px 45px;
-            font-size: 22px;
-            background: linear-gradient(45deg, #ff0055, #ffcc00);
-            color: white;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
+            position: absolute; z-index: 100; padding: 18px 45px;
+            font-size: 22px; background: linear-gradient(45deg, #ff0055, #ffcc00);
+            color: white; border: none; border-radius: 40px; cursor: pointer;
             box-shadow: 0 0 30px rgba(255, 0, 85, 0.6);
-        }
-
-        @media (max-width: 768px) {
-            .fade-text { font-size: 4.5rem; }
         }
     </style>
 </head>
@@ -90,6 +60,10 @@
         const displayText = document.getElementById('display-text');
         const bgMusic = document.getElementById('bgMusic');
 
+        // 检测移动端
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const dpr = window.devicePixelRatio || 1;
+
         const lines = [
             "3", "2", "1", "2026", "珊珊", "新", "年", "快", "乐", 
             "愿我们", "新的一年", "好运+1", "幸福+1", "健康+1", 
@@ -102,36 +76,37 @@
         let isStarted = false;
 
         function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
         }
         window.addEventListener('resize', resize);
         resize();
 
         class Particle {
             constructor(x, y, color, velocity) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
+                this.x = x; this.y = y; this.color = color;
                 if (velocity) {
                     this.velocity = velocity;
                 } else {
                     const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 8 + 2;
+                    const speed = Math.random() * (isMobile ? 6 : 8) + 2;
                     this.velocity = { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed };
                 }
                 this.alpha = 1;
                 this.friction = 0.95;
                 this.gravity = 0.12;
-                this.decay = Math.random() * 0.01 + 0.01;
+                this.decay = Math.random() * 0.01 + (isMobile ? 0.015 : 0.01);
             }
             draw() {
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, isMobile ? 1.8 : 2.5, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
-                ctx.shadowBlur = 8;
+                ctx.shadowBlur = isMobile ? 4 : 8;
                 ctx.shadowColor = this.color;
                 ctx.fill();
                 ctx.restore();
@@ -147,30 +122,30 @@
         }
 
         function createHeartFirework(x, y, colorOverride) {
-            const count = 120;
+            const count = isMobile ? 70 : 120;
             const color = colorOverride || `hsl(${Math.random() * 360}, 100%, 65%)`;
             for (let i = 0; i < count; i++) {
                 const t = (i / count) * Math.PI * 2;
                 const vx = 16 * Math.pow(Math.sin(t), 3);
                 const vy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
-                particles.push(new Particle(x, y, color, { x: vx * 0.6, y: vy * 0.6 }));
+                particles.push(new Particle(x, y, color, { x: vx * 0.5, y: vy * 0.5 }));
             }
         }
 
         function createFirework(x, y) {
             const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FFFFFF', '#FF00FF'];
             const color = colors[Math.floor(Math.random() * colors.length)];
-            for (let i = 0; i < 100; i++) {
+            const count = isMobile ? 60 : 100;
+            for (let i = 0; i < count; i++) {
                 particles.push(new Particle(x, y, color));
             }
         }
 
-        // 新增：10个随机小烟花逻辑
         function spawnMiniFireworks(centerX, centerY) {
             for (let i = 0; i < 10; i++) {
                 setTimeout(() => {
-                    const offsetX = (Math.random() - 0.5) * 400;
-                    const offsetY = (Math.random() - 0.5) * 400;
+                    const offsetX = (Math.random() - 0.5) * (isMobile ? 200 : 400);
+                    const offsetY = (Math.random() - 0.5) * (isMobile ? 200 : 400);
                     const randomColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
                     createFirework(centerX + offsetX, centerY + offsetY);
                 }, i * 100);
@@ -179,56 +154,55 @@
 
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, i) => {
-                if (p.alpha <= 0) {
-                    particles.splice(i, 1);
-                } else {
-                    p.update();
-                    p.draw();
-                }
-            });
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].alpha <= 0) particles.splice(i, 1);
+            }
             animationId = requestAnimationFrame(animate);
         }
 
-        canvas.addEventListener('mousedown', (e) => {
+        // 交互逻辑
+        const triggerHeart = (e) => {
             if (!isStarted) return;
-            createHeartFirework(e.clientX, e.clientY);
-        });
+            const x = e.clientX || (e.touches && e.touches[0].clientX);
+            const y = e.clientY || (e.touches && e.touches[0].clientY);
+            if (x && y) createHeartFirework(x, y);
+        };
+        canvas.addEventListener('mousedown', triggerHeart);
+        canvas.addEventListener('touchstart', triggerHeart);
 
         async function startSequence() {
             isStarted = true;
             bgMusic.currentTime = 0;
-            bgMusic.play().catch(e => console.log("音频播放失败:", e));
+            bgMusic.play().catch(() => {});
 
             startBtn.style.display = 'none';
             if (!animationId) animate();
 
             for (let i = 0; i < lines.length; i++) {
+                if (!isStarted) return;
                 const currentText = lines[i];
                 displayText.innerText = currentText;
                 displayText.style.display = 'block';
                 displayText.classList.add('active');
 
-                // --- 修改处：将普通烟花数量增加到 4 个 ---
+                // 每次切换伴随4个普通烟花
                 for(let j=0; j<4; j++) { 
                     setTimeout(() => {
-                        if (Math.random() < 0.3) {
-                            createHeartFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.5 + 100);
-                        } else {
-                            createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.6 + 100);
-                        }
-                    }, j * 250); // 间隔稍微缩短让爆发更有力
+                        const rx = Math.random() * window.innerWidth;
+                        const ry = Math.random() * window.innerHeight * 0.5 + 100;
+                        if (Math.random() < 0.3) createHeartFirework(rx, ry);
+                        else createFirework(rx, ry);
+                    }, j * 250);
                 }
 
-                // 随机伴随一次10连发小烟花
                 if(i > 3 && Math.random() > 0.5) {
-                    spawnMiniFireworks(canvas.width/2, canvas.height/2);
+                    spawnMiniFireworks(window.innerWidth/2, window.innerHeight/2);
                 }
 
-                let waitTime = 1800;
-                if (["3", "2", "1"].includes(currentText)) waitTime = 1000;
-
+                let waitTime = ["3", "2", "1"].includes(currentText) ? 1000 : 1800;
                 await new Promise(r => setTimeout(r, waitTime)); 
                 
                 if (i !== lines.length - 1) {
@@ -237,15 +211,12 @@
                 }
             }
 
+            // 结尾循环
             autoFireworkInterval = setInterval(() => {
-                const x = Math.random() * canvas.width;
-                const y = Math.random() * canvas.height * 0.7;
-                if (Math.random() < 0.3) {
-                    createHeartFirework(x, y);
-                } else {
-                    createFirework(x, y);
-                }
-            }, 400); // 结尾频率也稍微加快
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight * 0.7;
+                Math.random() < 0.3 ? createHeartFirework(x, y) : createFirework(x, y);
+            }, 400);
         }
 
         startBtn.onclick = startSequence;

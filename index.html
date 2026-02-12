@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 新年快乐</title>
+    <title>2026 新年快乐 - 完美适配版</title>
     <style>
         body {
             margin: 0; padding: 0; background-color: #000; overflow: hidden;
             font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
             display: flex; justify-content: center; align-items: center; height: 100vh;
-            touch-action: none; /* 防止手机端双击缩放 */
+            touch-action: none;
         }
 
         canvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
@@ -25,11 +25,24 @@
             opacity: 0; transform: scale(0.3);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: none;
+            white-space: nowrap; /* 强制不换行 */
         }
 
-        /* 响应式文字：电脑9rem，手机4rem */
+        /* 默认大字号 */
         @media (min-width: 768px) { .fade-text { font-size: 9rem; } }
-        @media (max-width: 767px) { .fade-text { font-size: 4rem; } }
+        @media (max-width: 767px) { .fade-text { font-size: 4.5rem; } }
+
+        /* --- 核心修改：单独针对长句子的缩小类 --- */
+        @media (max-width: 767px) {
+            .fade-text.small-text {
+                font-size: 2.8rem !important; /* 手机端遇到长句子自动缩小到 2.8rem */
+            }
+        }
+        @media (min-width: 768px) {
+            .fade-text.small-text {
+                font-size: 6rem !important; /* 电脑端遇到长句子也稍微缩一点防止溢出 */
+            }
+        }
 
         .fade-text.active { display: block; opacity: 1; transform: scale(1); }
 
@@ -44,13 +57,10 @@
 <body>
 
     <canvas id="fireworks"></canvas>
-    
     <div id="text-container">
         <div id="display-text" class="fade-text"></div>
     </div>
-
     <button id="start-btn">点击开启 2026 祝福</button>
-
     <audio id="bgMusic" src="shanshan.mp3" preload="auto"></audio>
 
     <script>
@@ -60,7 +70,6 @@
         const displayText = document.getElementById('display-text');
         const bgMusic = document.getElementById('bgMusic');
 
-        // 检测移动端
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const dpr = window.devicePixelRatio || 1;
 
@@ -141,17 +150,6 @@
             }
         }
 
-        function spawnMiniFireworks(centerX, centerY) {
-            for (let i = 0; i < 10; i++) {
-                setTimeout(() => {
-                    const offsetX = (Math.random() - 0.5) * (isMobile ? 200 : 400);
-                    const offsetY = (Math.random() - 0.5) * (isMobile ? 200 : 400);
-                    const randomColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
-                    createFirework(centerX + offsetX, centerY + offsetY);
-                }, i * 100);
-            }
-        }
-
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
@@ -163,7 +161,6 @@
             animationId = requestAnimationFrame(animate);
         }
 
-        // 交互逻辑
         const triggerHeart = (e) => {
             if (!isStarted) return;
             const x = e.clientX || (e.touches && e.touches[0].clientX);
@@ -184,22 +181,24 @@
             for (let i = 0; i < lines.length; i++) {
                 if (!isStarted) return;
                 const currentText = lines[i];
+
+                // --- 修改点：如果是最后一行或字符数较多，添加缩小类 ---
+                if (currentText.length > 5 || currentText === "2026新年快乐") {
+                    displayText.classList.add('small-text');
+                } else {
+                    displayText.classList.remove('small-text');
+                }
+
                 displayText.innerText = currentText;
                 displayText.style.display = 'block';
                 displayText.classList.add('active');
 
-                // 每次切换伴随4个普通烟花
                 for(let j=0; j<4; j++) { 
                     setTimeout(() => {
                         const rx = Math.random() * window.innerWidth;
                         const ry = Math.random() * window.innerHeight * 0.5 + 100;
-                        if (Math.random() < 0.3) createHeartFirework(rx, ry);
-                        else createFirework(rx, ry);
+                        Math.random() < 0.3 ? createHeartFirework(rx, ry) : createFirework(rx, ry);
                     }, j * 250);
-                }
-
-                if(i > 3 && Math.random() > 0.5) {
-                    spawnMiniFireworks(window.innerWidth/2, window.innerHeight/2);
                 }
 
                 let waitTime = ["3", "2", "1"].includes(currentText) ? 1000 : 1800;
@@ -211,7 +210,6 @@
                 }
             }
 
-            // 结尾循环
             autoFireworkInterval = setInterval(() => {
                 const x = Math.random() * window.innerWidth;
                 const y = Math.random() * window.innerHeight * 0.7;
@@ -229,4 +227,3 @@
     </script>
 </body>
 </html>
-
